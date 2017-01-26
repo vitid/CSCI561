@@ -127,5 +127,18 @@ class TestBoardProcessor(unittest.TestCase):
         self.assertEqual(list(self.board_processor.getAllLegalPlacements(self.board_processor.PLAYER_1,board_state)),[(0,0),(4,4),(5,4),(6,4)])
         self.assertEqual(list(self.board_processor.getAllLegalPlacements(self.board_processor.PLAYER_2, board_state)), [(2,1),(3,1),(3,3),(4,1)])
 
+    def test_calculateBoardScore_0(self):
+        board_state = [
+            ['O', '*', '*', '*', '*', '*', '*', '*'],
+            ['*', '*', '*', '*', '*', '*', '*', '*'],
+            ['*', '*', '*', '*', '*', '*', '*', '*'],
+            ['*', '*', '*', '*', 'O', '*', '*', '*'],
+            ['*', '*', '*', '*', '*', '*', '*', '*'],
+            ['*', '*', '*', 'X', '*', '*', '*', '*'],
+            ['*', '*', '*', 'X', '*', '*', '*', '*'],
+            ['*', '*', '*', '*', '*', '*', '*', '*']
+        ]
+        self.assertEqual(self.board_processor.calculateBoardScore(self.board_processor.PLAYER_1,board_state),-98)
+        self.assertEqual(self.board_processor.calculateBoardScore(self.board_processor.PLAYER_2, board_state), 98)
 if __name__ == '__main__':
     unittest.main()

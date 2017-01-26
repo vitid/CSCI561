@@ -25,6 +25,16 @@ class BoardProcessor():
                 (1,1)
 
             ]
+        self.cell_weights = [
+            [99,-8,8,6,6,8,-8,99],
+            [-8,-24,-4,-3,-3,-4,-24,-8],
+            [8,-4,7,4,4,7,-4,8],
+            [6,-3,4,0,0,4,-3,6],
+            [6, -3, 4, 0, 0, 4, -3, 6],
+            [8, -4, 7, 4, 4, 7, -4, 8],
+            [-8, -24, -4, -3, -3, -4, -24, -8],
+            [99, -8, 8, 6, 6, 8, -8, 99]
+        ]
 
     def getAllLegalPlacements(self,player,bs):
         """
@@ -120,3 +130,18 @@ class BoardProcessor():
         for flip_cell in flip_list:
             result_bs[flip_cell[0]][flip_cell[1]] = player
         return(result_bs)
+
+    def calculateBoardScore(self,player,bs):
+        """
+        Calculate the current board score for a particular player
+
+        :param player:
+        :param bs:
+        :return:
+        """
+        opponent_player = self.PLAYER_2 if player == self.PLAYER_1 else self.PLAYER_1
+        flat_weights = [self.cell_weights[i][j] for i in range(0,len(self.cell_weights)) for j in range(0,len(self.cell_weights[0]))]
+        flat_boards = [bs[i][j] for i in range(0,len(bs)) for j in range(0,len(bs[0]))]
+        tuple_board_weights = zip(flat_boards,flat_weights)
+        score = sum([t[1] if t[0] == player else -t[1] if t[0] == opponent_player else 0 for t in tuple_board_weights])
+        return(score)
