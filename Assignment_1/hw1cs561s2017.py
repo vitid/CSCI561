@@ -1,10 +1,11 @@
 from copy import copy, deepcopy
 
 class BoardProcessor():
+    PLAYER_1 = 'X'
+    PLAYER_2 = 'O'
+    EMPTY_CELL = '*'
+
     def __init__(self):
-        self.PLAYER_1 = 'X'
-        self.PLAYER_2 = 'O'
-        self.EMPTY_CELL = '*'
         self.directions = [
                 #left
                 (0,-1),
@@ -36,6 +37,10 @@ class BoardProcessor():
             [99, -8, 8, 6, 6, 8, -8, 99]
         ]
 
+    def getOpponent(self,player):
+        opponent_player = BoardProcessor.PLAYER_2 if player == BoardProcessor.PLAYER_1 else BoardProcessor.PLAYER_1
+        return(opponent_player)
+
     def getAllLegalPlacements(self,player,bs):
         """
         Get all legal cell places for a particular player. This must go from left -> right & top -> bottom
@@ -61,7 +66,7 @@ class BoardProcessor():
         """
         if(bs[i][j] != self.EMPTY_CELL):
             return False
-        opponent_player = self.PLAYER_2 if player == self.PLAYER_1 else self.PLAYER_1
+        opponent_player = self.getOpponent(player)
         #count (#player,#opponent_player) for all possible directions
         for direction in self.directions:
             count_tuple = self.probeBoard(direction[0],direction[1],i+direction[0],j+direction[1],player,opponent_player,bs)
@@ -110,7 +115,7 @@ class BoardProcessor():
         """
         result_bs = deepcopy(bs)
 
-        opponent_player = self.PLAYER_2 if player == self.PLAYER_1 else self.PLAYER_1
+        opponent_player = self.getOpponent(player)
 
         #collect the flipped cells in a temp list so it doesn't mess up the whole board processing
         flip_list = []
@@ -139,7 +144,7 @@ class BoardProcessor():
         :param bs:
         :return:
         """
-        opponent_player = self.PLAYER_2 if player == self.PLAYER_1 else self.PLAYER_1
+        opponent_player = self.getOpponent(player)
         flat_weights = [self.cell_weights[i][j] for i in range(0,len(self.cell_weights)) for j in range(0,len(self.cell_weights[0]))]
         flat_boards = [bs[i][j] for i in range(0,len(bs)) for j in range(0,len(bs[0]))]
         tuple_board_weights = zip(flat_boards,flat_weights)
