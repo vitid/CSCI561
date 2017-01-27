@@ -1,5 +1,183 @@
 from copy import copy, deepcopy
 
+class MiniMaxSearch(object):
+
+    def __init__(self,player,depth,board_state):
+        self.player = player
+        self.max_depth = depth
+        self.board_state = board_state
+        self.board_processor = BoardProcessor()
+        self.logs = []
+
+    def getAllPossibleActions(self,current_player,current_board_state):
+        """
+        Get all legal actions of current_player, according to current_board_state.
+
+        :param current_player:
+        :param current_board_state:
+        :return: a list of a valid action(which is a placement position) - [(row,column),...], or [] indicates that there is no valid legal move(need to Pass)
+        """
+        return list(self.board_processor.getAllLegalPlacements(current_player,current_board_state))
+
+    def transition(self,current_player,current_board_state,action):
+        """
+        Transition function to map f(action) -> state
+
+        :param current_player:
+        :param current_board_state:
+        :param action: (row,column) to place a chip on, None indicates a Pass Move
+        :return: new Board State after applying the action
+        """
+        #This indicates Pass move
+        if(action is None):
+            return(deepcopy(current_board_state))
+
+        return self.board_processor.placePosition(current_player,action[0],action[1],current_board_state)
+
+    def getDecision(self):
+        """
+        Return an action for a particular configuration
+
+        :return: (row,column), a position of cell placement for the player, or None indicates Pass move
+        """
+        tuple_utility_action = self.maxValue("-Infinity","Infinity", self.player, self.board_state, self.max_depth,None,0)
+        return(tuple_utility_action[1])
+
+    def log(self, alpha, beta, depth, placement_position, heuristic_value):
+        """
+        Collect logs of the search program
+
+        :param alpha:
+        :param beta:
+        :param depth:
+        :param placement_position:
+        :param heuristic_value:
+        """
+        if depth == self.max_depth:
+            node_name = "root"
+        elif placement_position is None:
+            node_name = "pass"
+        else:
+            node_name = self.board_processor.translateRowColumn(placement_position[0], placement_position[1])
+
+        self.logs.append("{0},{1},{2},{3},{4}".format(node_name,self.max_depth - depth,heuristic_value,alpha,beta))
+
+    def minValue(self,alpha,beta,current_player,current_board_state,depth,parent_action,num_pass):
+        """
+        Process Minimizer node
+
+        :param alpha:
+        :param beta:
+        :param current_player:
+        :param current_board_state:
+        :param depth:
+        :param parent_action: (row,column) of a placing cell
+        :param num_pass:
+        :return: (utility_value,action), action is (row,column) of the placing chip
+        """
+        #Reach the cut-off level
+        if depth <= 0 or num_pass == 2:
+            utility_value = self.board_processor.calculateBoardScore(self.player, current_board_state)
+            self.log(alpha,beta,depth,parent_action,utility_value)
+            return (utility_value,None)
+
+        min_score = "Infinity"
+        selected_action = None
+
+        opponent = self.board_processor.getOpponent(current_player)
+        actions = self.getAllPossibleActions(current_player,current_board_state)
+
+        #If player unable to make a move
+        if (len(actions) == 0):
+            actions = [None]
+            num_pass = num_pass + 1
+        else:
+            num_pass = 0
+
+        self.log(alpha, beta, depth, parent_action, min_score)
+
+        for action in actions:
+            new_bs = self.transition(current_player,current_board_state,action)
+            score = self.maxValue(alpha,beta,opponent,new_bs,depth-1,action,num_pass)[0]
+            if min_score == "Infinity" or score < min_score:
+                min_score = score
+                selected_action = action
+
+            old_alpha_beta = (alpha,beta)
+            if(beta == "Infinity"):
+                beta = min_score
+            else:
+                beta = min(beta,min_score)
+
+            if (alpha != "-Infinity" and beta != "Infinity") and beta < alpha:
+                self.log(old_alpha_beta[0], old_alpha_beta[1], depth, parent_action, min_score)
+                break
+            if (alpha == beta):
+                self.log(alpha, beta, depth, parent_action, min_score)
+                break
+
+            self.log(alpha, beta, depth, parent_action, min_score)
+
+        return((min_score,selected_action))
+
+    def maxValue(self,alpha,beta,current_player,current_board_state,depth,parent_action,num_pass):
+        """
+        Process Maximizer node
+
+        :param alpha:
+        :param beta:
+        :param current_player:
+        :param current_board_state:
+        :param depth:
+        :param parent_action:
+        :param num_pass
+        :return: (utility_value,action), action is (row,column) of the placing chip
+        """
+        # Reach the cut-off level
+        if depth <= 0 or num_pass == 2:
+            utility_value = self.board_processor.calculateBoardScore(self.player, current_board_state)
+            self.log(alpha, beta, depth, parent_action, utility_value)
+            return (utility_value, None)
+
+        max_score = "-Infinity"
+        selected_action = None
+
+        opponent = self.board_processor.getOpponent(current_player)
+        actions = self.getAllPossibleActions(current_player,current_board_state)
+
+        #If player unable to make a move
+        if(len(actions) == 0):
+            actions = [None]
+            num_pass = num_pass + 1
+        else:
+            num_pass = 0
+
+        self.log(alpha, beta, depth, parent_action, max_score)
+
+        for action in actions:
+            new_bs = self.transition(current_player,current_board_state,action)
+            score = self.minValue(alpha,beta,opponent,new_bs,depth-1,action,num_pass)[0]
+            if max_score == "-Infinity" or score > max_score:
+                max_score = score
+                selected_action = action
+
+            old_alpha_beta = (alpha,beta)
+            if(alpha == "-Infinity"):
+                alpha = max_score
+            else:
+                alpha = max(alpha,max_score)
+
+            if (alpha != "-Infinity" and beta != "Infinity") and beta < alpha:
+                self.log(old_alpha_beta[0], old_alpha_beta[1], depth, parent_action, max_score)
+                break
+            if (alpha == beta):
+                self.log(alpha, beta, depth, parent_action, max_score)
+                break
+
+            self.log(alpha, beta, depth, parent_action, max_score)
+
+        return((max_score,selected_action))
+
 class BoardProcessor():
     PLAYER_1 = 'X'
     PLAYER_2 = 'O'
@@ -150,3 +328,12 @@ class BoardProcessor():
         tuple_board_weights = zip(flat_boards,flat_weights)
         score = sum([t[1] if t[0] == player else -t[1] if t[0] == opponent_player else 0 for t in tuple_board_weights])
         return(score)
+
+    def translateRowColumn(self,i,j):
+        """
+        Translate (row,column) to a board representation
+        :param i:
+        :param j:
+        :return: Ex: (0,0) becomes 1a
+        """
+        return("{1}{0}".format(i+1,chr(65+j).lower()))

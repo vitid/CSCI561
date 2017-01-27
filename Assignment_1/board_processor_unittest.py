@@ -140,5 +140,11 @@ class TestBoardProcessor(unittest.TestCase):
         ]
         self.assertEqual(self.board_processor.calculateBoardScore(BoardProcessor.PLAYER_1,board_state),-98)
         self.assertEqual(self.board_processor.calculateBoardScore(BoardProcessor.PLAYER_2, board_state), 98)
+    def test_translateRowColumn(self):
+        self.assertEqual(self.board_processor.translateRowColumn(0,0),"a1")
+        self.assertEqual(self.board_processor.translateRowColumn(0, 7), "h1")
+        self.assertEqual(self.board_processor.translateRowColumn(4, 4), "e5")
+        self.assertEqual(self.board_processor.translateRowColumn(7, 0), "a8")
+        self.assertEqual(self.board_processor.translateRowColumn(7, 7), "h8")
 if __name__ == '__main__':
     unittest.main()
