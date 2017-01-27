@@ -97,7 +97,7 @@ class MiniMaxSearch(object):
         for action in actions:
             new_bs = self.transition(current_player,current_board_state,action)
             score = self.minValue(opponent,new_bs,depth-1)
-            if max_score == "Infinity" or score > max_score:
+            if max_score == "-Infinity" or score > max_score:
                 max_score = score
 
         return(max_score)
