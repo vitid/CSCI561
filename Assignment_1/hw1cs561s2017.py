@@ -1,3 +1,4 @@
+import sys
 from copy import copy, deepcopy
 
 class MiniMaxSearch(object):
@@ -337,3 +338,39 @@ class BoardProcessor():
         :return: Ex: (0,0) becomes 1a
         """
         return("{1}{0}".format(i+1,chr(65+j).lower()))
+
+if __name__ == '__main__':
+    """
+    read from the input file
+
+    Ex: python hw1cs561s2017.py -i '/home/vitidn/mydata/repo_git/CSCI561/Assignment_1/instruction/Sample Test Cases/TestCase 3/input.txt'
+    """
+    player = ""
+    max_depth = -1
+    board_state = []
+
+    filepath = sys.argv[2]
+    f = open(filepath,'r')
+    for index,line in enumerate(f):
+        line = line.replace("\r","")
+        line = line.replace("\n","")
+        if(index == 0):
+            player = line
+        elif(index == 1):
+            max_depth = int(line)
+        else:
+            rows = [c for c in line]
+            board_state.append(rows)
+
+    minimax_search = MiniMaxSearch(player,max_depth,board_state)
+    select_action = minimax_search.getDecision()
+    if(select_action is not None):
+        board_processor = BoardProcessor()
+        board_state = board_processor.placePosition(player,select_action[0],select_action[1],board_state)
+    #print updated board state
+    for i in range(0,len(board_state)):
+        print("".join([e for e in board_state[i]]))
+    #print traversed log
+    print("Node,Depth,Value,Alpha,Beta")
+    for log in minimax_search.logs:
+        print(log)
