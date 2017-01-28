@@ -10,6 +10,48 @@ class MiniMaxSearch(object):
         self.board_processor = BoardProcessor()
         self.logs = []
 
+    @staticmethod
+    def compare(a,b):
+        """
+        Compare 2 numbers, handle Infinity and -Infinity
+
+        :param a:
+        :param b:
+        :return: 1 -> a>b, 0 -> a==b, -1 -> a<b
+        """
+        if (type(a) is not str and type(b) is not str):
+            if a > b:
+                return 1
+            elif a < b:
+                return -1
+            return 0
+        if (type(a) is str and type(b) is str):
+            if a == b:
+                return 0
+            if a == "-Infinity":
+                return -1
+            return 1
+        if (type(a) is str):
+            if a == "-Infinity":
+                return -1
+            return 1
+        #b is str
+        if b == "-Infinity":
+            return 1
+        return -1
+
+    @staticmethod
+    def getMax(a,b):
+        if MiniMaxSearch.compare(a,b) == -1:
+            return b
+        return a
+
+    @staticmethod
+    def getMin(a, b):
+        if MiniMaxSearch.compare(a, b) == 1:
+            return b
+        return a
+
     def getAllPossibleActions(self,current_player,current_board_state):
         """
         Get all legal actions of current_player, according to current_board_state.
@@ -100,26 +142,21 @@ class MiniMaxSearch(object):
         for action in actions:
             new_bs = self.transition(current_player,current_board_state,action)
             score = self.maxValue(alpha,beta,opponent,new_bs,depth-1,action,num_pass)[0]
-            if min_score == "Infinity" or score < min_score:
+            if MiniMaxSearch.compare(score,min_score) == -1:
                 min_score = score
                 selected_action = action
 
-            old_alpha_beta = (alpha,beta)
-            if(beta == "Infinity"):
-                beta = min_score
-            else:
-                beta = min(beta,min_score)
-
-            if (alpha != "-Infinity" and beta != "Infinity") and beta < alpha:
-                self.log(old_alpha_beta[0], old_alpha_beta[1], depth, parent_action, min_score)
-                break
-            if (alpha == beta):
-                self.log(alpha, beta, depth, parent_action, min_score)
-                break
+            beta_to_update = MiniMaxSearch.getMin(beta,min_score)
+            #handle weird grader's logic
+            if MiniMaxSearch.compare(beta_to_update,alpha) > 0:
+                beta = beta_to_update
 
             self.log(alpha, beta, depth, parent_action, min_score)
 
-        return((min_score,selected_action))
+            if MiniMaxSearch.compare(min_score,alpha) <= 0:
+                return (min_score, selected_action)
+
+        return(min_score,selected_action)
 
     def maxValue(self,alpha,beta,current_player,current_board_state,depth,parent_action,num_pass):
         """
@@ -158,26 +195,21 @@ class MiniMaxSearch(object):
         for action in actions:
             new_bs = self.transition(current_player,current_board_state,action)
             score = self.minValue(alpha,beta,opponent,new_bs,depth-1,action,num_pass)[0]
-            if max_score == "-Infinity" or score > max_score:
+            if MiniMaxSearch.compare(score,max_score) == 1:
                 max_score = score
                 selected_action = action
 
-            old_alpha_beta = (alpha,beta)
-            if(alpha == "-Infinity"):
-                alpha = max_score
-            else:
-                alpha = max(alpha,max_score)
-
-            if (alpha != "-Infinity" and beta != "Infinity") and beta < alpha:
-                self.log(old_alpha_beta[0], old_alpha_beta[1], depth, parent_action, max_score)
-                break
-            if (alpha == beta):
-                self.log(alpha, beta, depth, parent_action, max_score)
-                break
+            #handle weird grader's logic
+            alpha_to_update = MiniMaxSearch.getMax(alpha,max_score)
+            if MiniMaxSearch.compare(alpha_to_update,beta) < 0:
+                alpha = alpha_to_update
 
             self.log(alpha, beta, depth, parent_action, max_score)
 
-        return((max_score,selected_action))
+            if MiniMaxSearch.compare(max_score,beta) >= 0:
+                return (max_score, selected_action)
+
+        return(max_score,selected_action)
 
 class BoardProcessor():
     PLAYER_1 = 'X'

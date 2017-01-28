@@ -5,6 +5,32 @@ class TestMiniMaxSearch(unittest.TestCase):
     def setUp(self):
         self.board_processor = BoardProcessor()
 
+    def test_compare(self):
+        self.assertEqual(MiniMaxSearch.compare(0,0),0)
+        self.assertEqual(MiniMaxSearch.compare(10, 0), 1)
+        self.assertEqual(MiniMaxSearch.compare(-10, 0), -1)
+        self.assertEqual(MiniMaxSearch.compare("Infinity", "-Infinity"), 1)
+        self.assertEqual(MiniMaxSearch.compare("-Infinity", "Infinity"), -1)
+        self.assertEqual(MiniMaxSearch.compare("-Infinity", "-Infinity"), 0)
+        self.assertEqual(MiniMaxSearch.compare("-Infinity", -10), -1)
+        self.assertEqual(MiniMaxSearch.compare("Infinity", -10), 1)
+        self.assertEqual(MiniMaxSearch.compare(-10,"-Infinity"), 1)
+        self.assertEqual(MiniMaxSearch.compare(-10,"Infinity"), -1)
+
+    def test_getMin(self):
+        self.assertEqual(MiniMaxSearch.getMin(10,-10), -10)
+        self.assertEqual(MiniMaxSearch.getMin(1,"Infinity"),1)
+        self.assertEqual(MiniMaxSearch.getMin("Infinity",1), 1)
+        self.assertEqual(MiniMaxSearch.getMin(1, "-Infinity"), "-Infinity")
+        self.assertEqual(MiniMaxSearch.getMin("-Infinity", 1), "-Infinity")
+
+    def test_getMax(self):
+        self.assertEqual(MiniMaxSearch.getMax(10,-10), 10)
+        self.assertEqual(MiniMaxSearch.getMax(1,"Infinity"),"Infinity")
+        self.assertEqual(MiniMaxSearch.getMax("Infinity",1), "Infinity")
+        self.assertEqual(MiniMaxSearch.getMax(1, "-Infinity"), 1)
+        self.assertEqual(MiniMaxSearch.getMax("-Infinity", 1), 1)
+
     def test_search_0(self):
         board_state = [
             ['*', '*', '*', '*', '*', '*', '*', '*'],
