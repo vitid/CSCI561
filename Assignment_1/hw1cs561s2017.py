@@ -375,13 +375,15 @@ if __name__ == '__main__':
     """
     read from the input file
 
-    Ex: python hw1cs561s2017.py -i '/home/vitidn/mydata/repo_git/CSCI561/Assignment_1/instruction/Sample Test Cases/TestCase 3/input.txt'
+    Ex: python hw1cs561s2017.py'
     """
     player = ""
     max_depth = -1
     board_state = []
 
-    filepath = sys.argv[2]
+    filepath = "input.txt"
+    output_path = "output.txt"
+    content = ""
     f = open(filepath,'r')
     for index,line in enumerate(f):
         line = line.replace("\r","")
@@ -401,8 +403,12 @@ if __name__ == '__main__':
         board_state = board_processor.placePosition(player,select_action[0],select_action[1],board_state)
     #print updated board state
     for i in range(0,len(board_state)):
-        print("".join([e for e in board_state[i]]))
+        content = content + "".join([e for e in board_state[i]]) + "\n"
     #print traversed log
-    print("Node,Depth,Value,Alpha,Beta")
+    content = content + "Node,Depth,Value,Alpha,Beta" + "\n"
     for log in minimax_search.logs:
-        print(log)
+        content += log + "\n"
+    content = content[:-1]
+    #writtent to the ouutput file
+    output_file = open(output_path,'w')
+    output_file.write(content)
