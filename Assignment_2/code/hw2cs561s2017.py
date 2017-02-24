@@ -1,4 +1,6 @@
 import sys
+import copy
+import itertools
 
 class PropositionSymbol(object):
     def __init__(self,symbol):
@@ -143,15 +145,47 @@ class PLResolution(object):
     """
     Modified PLResolution algorithm to just check whether the received CNF are satisfiable or not
     """
-    def plResolution(self,clauses):
+    def plResolution(self,clause_set):
         """
+        :type clause_set: set[Clause]
+        :rtype: bool
 
-        :param clauses: list of clauses - [Clause,Clause,...], all are in CNF
+        :param clause_set: set of clauses - {Clause,Clause,...}, all are in CNF
         """
-        return
+        clauses = copy.copy(clause_set) # type: set[Clause]
+        new_clauses = set()
+
+        empty_clause = Clause([])
+
+        while True:
+            for pair in itertools.combinations(list(clauses),2):
+                ci = pair[0] # type: Clause
+                cj = pair[1] # type: Clause
+
+                resolvents = self.plResolve(ci,cj)
+
+                if empty_clause in resolvents:
+                    return False
+
+                new_clauses = new_clauses.union(resolvents)
+
+            if new_clauses.issubset(clauses):
+                return True
+
+            clauses = clauses.union(new_clauses)
 
     def plResolve(self,ci,cj):
-        return
+        """
+        :rtype: set[Clause]
+        :param ci:
+        :param cj:
+        :return:
+        """
+        resolvents = set() # type: set[Clause]
+
+        self.resolvePositiveWithNegative(ci,cj,resolvents)
+        self.resolvePositiveWithNegative(cj,ci,resolvents)
+        return resolvents
 
     def resolvePositiveWithNegative(self,c1,c2,resolvents):
         """
