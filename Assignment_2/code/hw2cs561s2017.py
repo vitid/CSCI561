@@ -211,6 +211,56 @@ class PLResolution(object):
             if not resolvent.isTautology():
                 resolvents.add(resolvent)
 
+class KnowledgeOperator(object):
+    def __init__(self,m,n,friend_pairs,enemy_pairs,clauseHelper = ClauseHelper(PropositionSymbolFactory())):
+        """
+        :type friend_pairs: list[(int,int)]
+        :type enemy_pairs: list[(int,int)]
+
+        :param m:
+        :param n:
+        :param friend_pairs:
+        :param enemy_pairs:
+        :param clauseHelper:
+        """
+        self.num_person = m # type: int
+        self.num_table = n # type: int
+        self.friend_pairs = friend_pairs
+        self.enemy_pairs = enemy_pairs
+        self.clauseHelper = clauseHelper # type: ClauseHelper
+
+    def getClausesOnePersonAtOneTable(self):
+        """
+        :rtype: set[Clause]
+
+        :return:
+        """
+        result = set()
+        for person_index in range(1,self.num_person+1):
+            clause_literals = ["X[{},{}]".format(person_index,table_index) for table_index in range(1,self.num_table + 1)]
+            result.add(self.clauseHelper.generateClause(clause_literals))
+
+        table_indexs = range(1,self.num_table+1)
+
+        for person_index in range(1, self.num_person + 1):
+            for pair in itertools.combinations(table_indexs,2):
+                clause_literals = ["~X[{},{}]".format(person_index,pair[0]),"~X[{},{}]".format(person_index,pair[1])]
+                result.add(self.clauseHelper.generateClause(clause_literals))
+        return result
+
+    def getClausesEnemy(self):
+        """
+        :rtype: set[Clause]
+
+        :return:
+        """
+        result = set()
+        for person_i,person_j in self.enemy_pairs:
+            for table_index in range(1,self.num_table + 1):
+                clause_literals = ["~X[{},{}]".format(person_i, table_index), "~X[{},{}]".format(person_j, table_index)]
+                result.add(self.clauseHelper.generateClause(clause_literals))
+        return result
+
 if __name__ == "__main__":
     prop1 = PropositionSymbol("a")
     print prop1.symbol

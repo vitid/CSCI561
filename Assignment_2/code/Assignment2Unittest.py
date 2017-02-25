@@ -165,5 +165,43 @@ class TestKnowledgeRepresentation(unittest.TestCase):
         # !!Empty clause is not tautology !!
         self.assertFalse(self.clauseHelper.generateClause([]).isTautology())
 
+    def test_getClausesOnePersonAtOneTable0(self):
+        ko = KnowledgeOperator(3,2,[],[],self.clauseHelper)
+        expected = {
+            self.clauseHelper.generateClause(["X[1,1]","X[1,2]"]),
+            self.clauseHelper.generateClause(["X[2,1]", "X[2,2]"]),
+            self.clauseHelper.generateClause(["X[3,1]", "X[3,2]"]),
+            self.clauseHelper.generateClause(["~X[1,1]", "~X[1,2]"]),
+            self.clauseHelper.generateClause(["~X[2,1]", "~X[2,2]"]),
+            self.clauseHelper.generateClause(["~X[3,1]", "~X[3,2]"]),
+        }
+        self.assertEqual(ko.getClausesOnePersonAtOneTable(),expected)
+
+    def test_getClausesOnePersonAtOneTable1(self):
+        ko = KnowledgeOperator(2,3,[],[],self.clauseHelper)
+        expected = {
+            self.clauseHelper.generateClause(["X[1,1]","X[1,2]","X[1,3]"]),
+            self.clauseHelper.generateClause(["X[2,1]", "X[2,2]","X[2,3]"]),
+
+            self.clauseHelper.generateClause(["~X[1,1]", "~X[1,2]"]),
+            self.clauseHelper.generateClause(["~X[1,1]", "~X[1,3]"]),
+            self.clauseHelper.generateClause(["~X[1,2]", "~X[1,3]"]),
+
+            self.clauseHelper.generateClause(["~X[2,1]", "~X[2,2]"]),
+            self.clauseHelper.generateClause(["~X[2,1]", "~X[2,3]"]),
+            self.clauseHelper.generateClause(["~X[2,2]", "~X[2,3]"]),
+        }
+        self.assertEqual(ko.getClausesOnePersonAtOneTable(),expected)
+
+    def test_getClausesEnemy0(self):
+        ko = KnowledgeOperator(3,2,[],[(1,2),(2,3)],self.clauseHelper)
+        expected = {
+            self.clauseHelper.generateClause(["~X[1,1]","~X[2,1]"]),
+            self.clauseHelper.generateClause(["~X[1,2]", "~X[2,2]"]),
+            self.clauseHelper.generateClause(["~X[2,1]", "~X[3,1]"]),
+            self.clauseHelper.generateClause(["~X[2,2]", "~X[3,2]"]),
+        }
+        self.assertEqual(ko.getClausesEnemy(),expected)
+
 if __name__ == '__main__':
     unittest.main()
