@@ -23,6 +23,19 @@ class TestKnowledgeRepresentation(unittest.TestCase):
         self.assertEqual(self.clauseHelper.generateClause(["A", "B", "C"]).getNumberLiterals(), 3)
         self.assertEqual(self.clauseHelper.generateClause([]).getNumberLiterals(), 0)
 
+        self.assertEqual(
+            set([
+                self.clauseHelper.generateClause(["A", "B", "C"]),
+                self.clauseHelper.generateClause(["C", "B", "A"])
+                ]
+            ),
+            set(
+                [
+                self.clauseHelper.generateClause(["B", "C", "A"])
+                ]
+            )
+        )
+
         self.assertEqual("A,~B", self.clauseHelper.generateClause(["~B","A"]).getClauseRepresentation())
         self.assertEqual("~C", self.clauseHelper.generateClause(["~C"]).getClauseRepresentation())
         self.assertEqual("", self.clauseHelper.generateClause([]).getClauseRepresentation())
@@ -246,7 +259,7 @@ class TestKnowledgeRepresentation(unittest.TestCase):
         ko = KnowledgeOperator(5, 1, [(1,2),(4,5)], [(1,3)], self.clauseHelper)
         self.assertFalse(self.plResolution.plResolution(ko.getAssociatedClauses()))
 
-    def xtest_TATestCase3(self):
+    def _test_TATestCase3(self):
         """
         Input:
         8 10
@@ -259,6 +272,40 @@ class TestKnowledgeRepresentation(unittest.TestCase):
         :return:
         """
         ko = KnowledgeOperator(8, 10, [], [(1,2),(2,5),(6,7),(7,8)], self.clauseHelper)
+        self.assertTrue(self.plResolution.plResolution(ko.getAssociatedClauses()))
+
+    def test_TATestCase4(self):
+        """
+        Input:
+        6 2
+        1 2 F
+        2 4 F
+        4 6 F
+        1 6 E
+
+        Output: no
+        :return:
+        """
+        ko = KnowledgeOperator(6, 2, [(1,2),(2,4),(4,6)], [(1,6)], self.clauseHelper)
+        self.assertFalse(self.plResolution.plResolution(ko.getAssociatedClauses()))
+
+    def _test_TATestCase5(self):
+        """
+        Input:
+        9 3
+        1 2 E
+        1 3 F
+        1 8 F
+        2 4 F
+        3 7 E
+        5 6 F
+        6 9 F
+        8 9 E
+
+        Output: yes
+        :return:
+        """
+        ko = KnowledgeOperator(9, 3, [(1,3),(1,8),(2,4),(5,6),(6,9)], [(1,2),(3,7),(8,9)], self.clauseHelper)
         self.assertTrue(self.plResolution.plResolution(ko.getAssociatedClauses()))
 
 if __name__ == '__main__':
