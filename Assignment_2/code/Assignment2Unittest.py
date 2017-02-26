@@ -308,5 +308,174 @@ class TestKnowledgeRepresentation(unittest.TestCase):
         ko = KnowledgeOperator(9, 3, [(1,3),(1,8),(2,4),(5,6),(6,9)], [(1,2),(3,7),(8,9)], self.clauseHelper)
         self.assertTrue(self.plResolution.plResolution(ko.getAssociatedClauses()))
 
+    def test_determineValue0(self):
+        model = Model({PropositionSymbol("A"):True})
+        self.assertTrue(model.determineValue(self.clauseHelper.generateClause(["A"])))
+        self.assertFalse(model.determineValue(self.clauseHelper.generateClause(["~A"])))
+
+    def test_determineValue1(self):
+        model = Model({PropositionSymbol("A"):True,PropositionSymbol("B"):True,PropositionSymbol("C"):False})
+        self.assertTrue(model.determineValue(self.clauseHelper.generateClause(["A","B","C"])))
+        self.assertTrue(model.determineValue(self.clauseHelper.generateClause(["~A", "B", "C"])))
+        self.assertTrue(model.determineValue(self.clauseHelper.generateClause(["~A", "~B", "~C"])))
+        self.assertFalse(model.determineValue(self.clauseHelper.generateClause(["~A", "~B", "C"])))
+
+        self.assertTrue(model.determineValue(self.clauseHelper.generateClause(["D","~D"])))
+
+    def test_satisfies0(self):
+        model = Model({PropositionSymbol("A"): True, PropositionSymbol("B"): True, PropositionSymbol("C"): False})
+        self.assertTrue(model.satisfies(set([
+            self.clauseHelper.generateClause(["A"]),
+            self.clauseHelper.generateClause(["B"]),
+            self.clauseHelper.generateClause(["~C"])
+            ])))
+
+        self.assertFalse(model.satisfies(set([
+            self.clauseHelper.generateClause(["A"]),
+            self.clauseHelper.generateClause(["B"]),
+            self.clauseHelper.generateClause(["C"])
+        ])))
+
+        self.assertTrue(model.satisfies(set([
+            self.clauseHelper.generateClause(["A","B","C"])
+        ])))
+
+        self.assertTrue(model.satisfies(set([
+            self.clauseHelper.generateClause(["A", "B"]),
+            self.clauseHelper.generateClause(["~A", "~C"]),
+        ])))
+
+        self.assertFalse(model.satisfies(set([
+            self.clauseHelper.generateClause(["A", "B"]),
+            self.clauseHelper.generateClause(["~A", "C"]),
+        ])))
+
+    def test_flip0(self):
+        model = Model({PropositionSymbol("A"): True, PropositionSymbol("B"): True, PropositionSymbol("C"): False})
+        self.assertEqual(model.flip(PropositionSymbol("A")).assignments, {PropositionSymbol("A"): False, PropositionSymbol("B"): True, PropositionSymbol("C"): False})
+        self.assertEqual(model.flip(PropositionSymbol("C")).assignments,
+                         {PropositionSymbol("A"): True, PropositionSymbol("B"): True, PropositionSymbol("C"): True})
+        # sign of the original model is not changed
+        self.assertEqual(model.assignments,
+                         {PropositionSymbol("A"): True, PropositionSymbol("B"): True, PropositionSymbol("C"): False})
+
+    def test_randomAssignmentToSymbolsInClauses0(self):
+        walkSAT = WalkSAT()
+        assignments = walkSAT.randomAssignmentToSymbolsInClauses(
+            set([
+                self.clauseHelper.generateClause(["A", "B"]),
+                self.clauseHelper.generateClause(["~A", "C"]),
+                self.clauseHelper.generateClause(["~D"])
+            ])
+        ).assignments
+        assigned_symbol = set([s.symbol for s in assignments])
+        self.assertEqual(assigned_symbol,set(["A","B","C","D"]))
+
+    def test_walkSAT0(self):
+        walkSAT = WalkSAT()
+        clauses = set([
+                self.clauseHelper.generateClause(["A", "B"]),
+                self.clauseHelper.generateClause(["~A", "C"]),
+                self.clauseHelper.generateClause(["~D"])
+            ])
+        model = walkSAT.walkSAT(clauses,0.5,100)
+        self.assertTrue(model.satisfies(clauses))
+
+    def test_walkSAT1(self):
+        walkSAT = WalkSAT()
+        clauses = set([
+                self.clauseHelper.generateClause(["A"]),
+                self.clauseHelper.generateClause(["~A"])
+            ])
+        model = walkSAT.walkSAT(clauses,0.5,100)
+        self.assertIsNone(model)
+
+    def test_TATestCase1_walkSAT(self):
+        """
+        Input:
+        4 1
+        1 2 F
+        2 3 F
+        3 4 F
+
+        Output: yes
+        :return:
+        """
+        ko = KnowledgeOperator(4, 1, [(1,2),(2,3),(3,4)], [], self.clauseHelper)
+        walkSAT = WalkSAT(100)
+        model = walkSAT.walkSAT(ko.getAssociatedClauses(), 0.5, 100)
+        self.assertTrue(model.satisfies(ko.getAssociatedClauses()))
+
+    def test_TATestCase2_walkSAT(self):
+        """
+        Input:
+        5 1
+        1 3 E
+        1 2 F
+        4 5 F
+
+        Output: no
+        :return:
+        """
+        ko = KnowledgeOperator(5, 1, [(1,2),(4,5)], [(1,3)], self.clauseHelper)
+        walkSAT = WalkSAT(100)
+        model = walkSAT.walkSAT(ko.getAssociatedClauses(), 0.5, 100)
+        self.assertIsNone(model)
+
+    def test_TATestCase3_walkSAT(self):
+        """
+        Input:
+        8 10
+        1 2 E
+        2 5 E
+        6 7 E
+        7 8 E
+
+        Output: yes
+        :return:
+        """
+        ko = KnowledgeOperator(8, 10, [], [(1,2),(2,5),(6,7),(7,8)], self.clauseHelper)
+        walkSAT = WalkSAT(100)
+        model = walkSAT.walkSAT(ko.getAssociatedClauses(), 0.5, 100)
+        self.assertTrue(model.satisfies(ko.getAssociatedClauses()))
+
+    def test_TATestCase4_walkSAT(self):
+        """
+        Input:
+        6 2
+        1 2 F
+        2 4 F
+        4 6 F
+        1 6 E
+
+        Output: no
+        :return:
+        """
+        ko = KnowledgeOperator(6, 2, [(1, 2), (2, 4), (4, 6)], [(1, 6)], self.clauseHelper)
+        walkSAT = WalkSAT(100)
+        model = walkSAT.walkSAT(ko.getAssociatedClauses(), 0.5, 100)
+        self.assertIsNone(model)
+
+    def test_TATestCase5_walkSAT(self):
+        """
+        Input:
+        9 3
+        1 2 E
+        1 3 F
+        1 8 F
+        2 4 F
+        3 7 E
+        5 6 F
+        6 9 F
+        8 9 E
+
+        Output: yes
+        :return:
+        """
+        ko = KnowledgeOperator(9, 3, [(1, 3), (1, 8), (2, 4), (5, 6), (6, 9)], [(1, 2), (3, 7), (8, 9)],self.clauseHelper)
+        walkSAT = WalkSAT(100)
+        model = walkSAT.walkSAT(ko.getAssociatedClauses(), 0.5, 100)
+        self.assertTrue(model.satisfies(ko.getAssociatedClauses()))
+
 if __name__ == '__main__':
     unittest.main()

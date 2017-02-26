@@ -1,6 +1,7 @@
 import sys
 import copy
 import itertools
+import random
 
 class PropositionSymbol(object):
     def __init__(self,symbol):
@@ -14,6 +15,9 @@ class PropositionSymbol(object):
         if not isinstance(other,self.__class__):
             return False
         return self.symbol == other.symbol
+
+    def __hash__(self):
+        return hash(self.symbol)
 
 class Literal(object):
     def __init__(self,propositionSymbol,isPositive=True):
@@ -50,6 +54,9 @@ class Clause(object):
 
     def isEmpty(self):
         return self.getNumberLiterals() == 0
+
+    def getSymbols(self):
+        return self.getPositiveSymbols().union(self.getNegativeSymbols())
 
     def getPositiveSymbols(self):
         if self._positiveSymbols is None:
@@ -319,6 +326,158 @@ class KnowledgeOperator(object):
                 clause_literals = ["~X[{},{}]".format(person_i, table_index), "~X[{},{}]".format(person_j, table_index)]
                 result.add(self.clauseHelper.generateClause(clause_literals))
         return result
+
+class Model(object):
+    def __init__(self,d):
+        self.assignments = copy.copy(d) # type:{PropositionSymbol:bool}
+
+    def determineValue(self,c):
+        """
+        :type c: Clause
+        :rtype: bool
+
+        :param c:
+        :return:
+        """
+        # should not happen
+        if c.isEmpty():
+            raise(Exception("try to determine truth value of and empty clause"))
+
+        if c.isTautology():
+            return True
+
+        for p in c.getPositiveSymbols():
+            value = self.assignments[p]
+            if value:
+                return True
+        for p in c.getNegativeSymbols():
+            value = self.assignments[p]
+            if not value:
+                return True
+
+        return False
+
+    def satisfies(self,clauses):
+        """
+        :type clauses: set[Clause]
+        :rtype: bool
+
+        :param clauses:
+        :return:
+        """
+        for c in clauses:
+            if not self.determineValue(c):
+                return False
+
+        return True
+
+    def flip(self,p):
+        """
+        :type p: PropositionSymbol
+        """
+        if self.assignments[p]:
+            return self.union(p,False)
+        return self.union(p,True)
+
+    def union(self,p,isTrue):
+        """
+        :type p: PropositionSymbol
+        :type isTrue: bool
+        :rtype: Model
+
+        :param p:
+        :param isTrue:
+        :return:
+        """
+        m = Model(self.assignments)
+        m.assignments[p] = isTrue
+        return m
+
+class WalkSAT(object):
+    def __init__(self,seed=-1):
+        if seed > -1:
+            random.seed(seed)
+
+    def walkSAT(self,clauses,p=0.5,maxFlips=10000):
+        """
+        :type clauses: set[Clause]
+        :type p: decimal
+        :type maxFlips: int
+        :rtype: Model
+
+        :param clauses:
+        :param p:
+        :param maxFlips:
+        :return:
+        """
+        model = self.randomAssignmentToSymbolsInClauses(clauses)
+        for i in range(0,maxFlips):
+            if model.satisfies(clauses):
+                return model
+
+            clause = self.randomlySelectFalseClause(clauses,model)
+
+            if random.random() < p:
+                model = model.flip(self.randomlySelectSymbolFromClause(clause))
+            else:
+                model = self.flipSymbolInClauseMaximizesNumberSatisfiedClauses(clause,clauses,model)
+        return None
+
+
+    def flipSymbolInClauseMaximizesNumberSatisfiedClauses(self,clause,clauses,model):
+        """
+        :type clause: Clause
+        :type clauses: set[Clause]
+        :type model: Model
+        """
+        result = model
+
+        symbols = clause.getSymbols()
+        maxClausesSatisfied = -1
+        for symbol in symbols:
+            flippedModel = result.flip(symbol)
+            numberClausesSatisfied = 0
+            for c in clauses:
+                if flippedModel.determineValue(c):
+                    numberClausesSatisfied += 1
+
+            if numberClausesSatisfied > maxClausesSatisfied:
+                result = flippedModel
+                maxClausesSatisfied = numberClausesSatisfied
+                if numberClausesSatisfied == len(clauses):
+                    break
+        return result
+
+    def randomlySelectSymbolFromClause(self,clause):
+        return random.choice(list(clause.getSymbols()))
+
+    def randomlySelectFalseClause(self,clauses,model):
+        """
+        :rtype: Clause
+        """
+        falseClauses = []
+        for c in clauses: #type: Clause
+            if not model.determineValue(c):
+                falseClauses.append(c)
+
+        return random.choice(falseClauses)
+
+    def randomAssignmentToSymbolsInClauses(self,clauses):
+        """
+        :type clauses: set[Clause]
+
+        :param clauses:
+        :return:
+        """
+        symbols = set() # type: set[PropositionSymbol]
+        for c in clauses: # type: Clause
+            symbols = symbols.union(c.getSymbols())
+
+        values = {} # type: dict[PropositionSymbol: bool]
+        for p in symbols:
+            values[p] = random.choice([True, False])
+
+        return Model(values)
 
 if __name__ == "__main__":
     prop1 = PropositionSymbol("a")
