@@ -23,9 +23,9 @@ class TestKnowledgeRepresentation(unittest.TestCase):
         self.assertEqual(self.clauseHelper.generateClause(["A", "B", "C"]).getNumberLiterals(), 3)
         self.assertEqual(self.clauseHelper.generateClause([]).getNumberLiterals(), 0)
 
-        self.assertEqual(set(["A","~B"]), self.clauseHelper.generateClause(["~B","A"]).getClauseRepresentation())
-        self.assertEqual(set(["~C"]), self.clauseHelper.generateClause(["~C"]).getClauseRepresentation())
-        self.assertEqual(set([]), self.clauseHelper.generateClause([]).getClauseRepresentation())
+        self.assertEqual("A,~B", self.clauseHelper.generateClause(["~B","A"]).getClauseRepresentation())
+        self.assertEqual("~C", self.clauseHelper.generateClause(["~C"]).getClauseRepresentation())
+        self.assertEqual("", self.clauseHelper.generateClause([]).getClauseRepresentation())
 
         self.assertTrue(self.clauseHelper.generateClause(["A","B","C","~B"]).isTautology())
         self.assertFalse(self.clauseHelper.generateClause(["C","~B"]).isTautology())
@@ -34,35 +34,35 @@ class TestKnowledgeRepresentation(unittest.TestCase):
 
     def test_PLResolutionPN0(self):
         resolvents = set()
-        self.plResolution.resolvePositiveWithNegative(self.clauseHelper.generateClause(["~A", "B", "C"]),self.clauseHelper.generateClause(["~A", "B", "C"]),resolvents)
+        self.plResolution.resolveTwoClauses(self.clauseHelper.generateClause(["~A", "B", "C"]), self.clauseHelper.generateClause(["~A", "B", "C"]), resolvents)
         self.assertEqual(resolvents,set())
 
     def test_PLResolutionPN1(self):
         resolvents = set()
-        self.plResolution.resolvePositiveWithNegative(self.clauseHelper.generateClause(["A", "B"]),self.clauseHelper.generateClause(["B","~A"]),resolvents)
+        self.plResolution.resolveTwoClauses(self.clauseHelper.generateClause(["A", "B"]), self.clauseHelper.generateClause(["B", "~A"]), resolvents)
         self.assertEqual(resolvents, set( [self.clauseHelper.generateClause(["B"])] ))
         self.assertNotEqual(resolvents, set([self.clauseHelper.generateClause(["~B"])]))
 
     def test_PLResolutionPN2(self):
         resolvents = set()
-        self.plResolution.resolvePositiveWithNegative(self.clauseHelper.generateClause(["A", "B"]),self.clauseHelper.generateClause(["B","~A","C"]),resolvents)
+        self.plResolution.resolveTwoClauses(self.clauseHelper.generateClause(["A", "B"]), self.clauseHelper.generateClause(["B", "~A", "C"]), resolvents)
         self.assertEqual(resolvents, set( [self.clauseHelper.generateClause(["C","B"])] ))
 
     def test_PLResolutionPN3(self):
         resolvents = set()
-        self.plResolution.resolvePositiveWithNegative(self.clauseHelper.generateClause(["A", "B","~D"]),self.clauseHelper.generateClause(["D","B","~A","C"]),resolvents)
+        self.plResolution.resolveTwoClauses(self.clauseHelper.generateClause(["A", "B", "~D"]), self.clauseHelper.generateClause(["D", "B", "~A", "C"]), resolvents)
         # get Tautology
         self.assertEqual(resolvents, set())
 
     def test_PLResolutionPN4(self):
         resolvents = set()
-        self.plResolution.resolvePositiveWithNegative(self.clauseHelper.generateClause(["A", "B","~D"]),self.clauseHelper.generateClause(["B","~A","C","~E"]),resolvents)
+        self.plResolution.resolveTwoClauses(self.clauseHelper.generateClause(["A", "B", "~D"]), self.clauseHelper.generateClause(["B", "~A", "C", "~E"]), resolvents)
         # get Tautology
         self.assertEqual(resolvents, set([self.clauseHelper.generateClause(["B","~D","C","~E"])]))
 
     def test_PLResolutionPN5(self):
         resolvents = set()
-        self.plResolution.resolvePositiveWithNegative(self.clauseHelper.generateClause(["A", "B","~D","E"]),self.clauseHelper.generateClause(["B","~A","C","~E"]),resolvents)
+        self.plResolution.resolveTwoClauses(self.clauseHelper.generateClause(["A", "B", "~D", "E"]), self.clauseHelper.generateClause(["B", "~A", "C", "~E"]), resolvents)
         # get Tautology
         self.assertEqual(resolvents, set())
 
@@ -193,6 +193,21 @@ class TestKnowledgeRepresentation(unittest.TestCase):
         }
         self.assertEqual(ko.getClausesOnePersonAtOneTable(),expected)
 
+    def test_getClausesFriend0(self):
+        ko = KnowledgeOperator(3, 2, [(1, 2), (2, 3)], [], self.clauseHelper)
+        expected = {
+            self.clauseHelper.generateClause(["~X[1,1]", "X[2,1]"]),
+            self.clauseHelper.generateClause(["X[1,1]", "~X[2,1]"]),
+            self.clauseHelper.generateClause(["~X[1,2]", "X[2,2]"]),
+            self.clauseHelper.generateClause(["X[1,2]", "~X[2,2]"]),
+
+            self.clauseHelper.generateClause(["~X[2,1]", "X[3,1]"]),
+            self.clauseHelper.generateClause(["X[2,1]", "~X[3,1]"]),
+            self.clauseHelper.generateClause(["~X[2,2]", "X[3,2]"]),
+            self.clauseHelper.generateClause(["X[2,2]", "~X[3,2]"])
+        }
+        self.assertEqual(ko.getClausesFriend(), expected)
+
     def test_getClausesEnemy0(self):
         ko = KnowledgeOperator(3,2,[],[(1,2),(2,3)],self.clauseHelper)
         expected = {
@@ -202,6 +217,49 @@ class TestKnowledgeRepresentation(unittest.TestCase):
             self.clauseHelper.generateClause(["~X[2,2]", "~X[3,2]"]),
         }
         self.assertEqual(ko.getClausesEnemy(),expected)
+
+    def test_TATestCase1(self):
+        """
+        Input:
+        4 1
+        1 2 F
+        2 3 F
+        3 4 F
+
+        Output: yes
+        :return:
+        """
+        ko = KnowledgeOperator(4, 1, [(1,2),(2,3),(3,4)], [], self.clauseHelper)
+        self.assertTrue(self.plResolution.plResolution(ko.getAssociatedClauses()))
+
+    def test_TATestCase2(self):
+        """
+        Input:
+        5 1
+        1 3 E
+        1 2 F
+        4 5 F
+
+        Output: no
+        :return:
+        """
+        ko = KnowledgeOperator(5, 1, [(1,2),(4,5)], [(1,3)], self.clauseHelper)
+        self.assertFalse(self.plResolution.plResolution(ko.getAssociatedClauses()))
+
+    def xtest_TATestCase3(self):
+        """
+        Input:
+        8 10
+        1 2 E
+        2 5 E
+        6 7 E
+        7 8 E
+
+        Output: yes
+        :return:
+        """
+        ko = KnowledgeOperator(8, 10, [], [(1,2),(2,5),(6,7),(7,8)], self.clauseHelper)
+        self.assertTrue(self.plResolution.plResolution(ko.getAssociatedClauses()))
 
 if __name__ == '__main__':
     unittest.main()
