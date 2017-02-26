@@ -173,37 +173,23 @@ class PLResolution(object):
         :param clause_set: set of clauses - {Clause,Clause,...}, all are in CNF
         """
         clauses = copy.copy(clause_set) # type: set[Clause]
-        new_clauses = set()
 
         empty_clause = Clause([])
 
-        # cache what pair of clauses are already resolved to avoid unnecessary computation...
-        resolve_clauses_cache = {}
-
         while True:
 
-            # avoiding unnecessary .union(...) operation
-            list_resolvents = list() # type: list[Clause]
+            new_clauses = set()
             for pair in itertools.combinations(list(clauses),2):
                 ci = pair[0] # type: Clause
                 cj = pair[1] # type: Clause
 
-                if (ci.getClauseRepresentation(),cj.getClauseRepresentation()) in resolve_clauses_cache or (cj.getClauseRepresentation(),ci.getClauseRepresentation()) in resolve_clauses_cache:
-                    continue
-
                 resolvents = self.plResolve(ci,cj)
-                resolve_clauses_cache[(ci.getClauseRepresentation(),cj.getClauseRepresentation())] = 0
-                resolve_clauses_cache[(cj.getClauseRepresentation(), ci.getClauseRepresentation())] = 0
 
                 if empty_clause in resolvents:
                     return False
 
-                list_resolvents += list(resolvents)
-                #new_clauses = new_clauses.union(resolvents)
+                new_clauses = new_clauses.union(resolvents)
 
-            #new_clauses = new_clauses.union(list_resolvents)
-            new_clauses = list(new_clauses) + list_resolvents
-            new_clauses = set(new_clauses)
             if new_clauses.issubset(clauses):
                 return True
 
