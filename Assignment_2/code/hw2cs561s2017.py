@@ -480,5 +480,60 @@ class WalkSAT(object):
         return Model(values)
 
 if __name__ == "__main__":
-    prop1 = PropositionSymbol("a")
-    print prop1.symbol
+    """
+    read from the input file
+
+    Ex: python hw2cs561s2017.py'
+    """
+    num_person = -1
+    num_table = -1
+    friend_pairs = [] # type:list[tuple[int,int]]
+    enemy_pairs = [] # type:list[tuple[int,int]]
+
+    # parse all arguments from a file
+    f = open("input.txt", 'r')
+    for index, line in enumerate(f):
+        line = line.replace("\r", "")
+        line = line.replace("\n", "") # type: str
+        if index == 0:
+            num_person = int(line.split(" ")[0])
+            num_table = int(line.split(" ")[1])
+        else:
+            person_i = int(line.split(" ")[0])
+            person_j = int(line.split(" ")[1])
+            relationship = line.split(" ")[2] # can be only F or E
+            if relationship == "F":
+                friend_pairs.append((person_i,person_j))
+            else:
+                enemy_pairs.append((person_i,person_j))
+
+    # start PLResolution
+    propositionSymbolFactory = PropositionSymbolFactory()
+    clauseHelper = ClauseHelper(propositionSymbolFactory)
+    knowledgeOperator = KnowledgeOperator(num_person,num_table,friend_pairs,enemy_pairs,clauseHelper)
+    plResolution = PLResolution()
+    clauses = knowledgeOperator.getAssociatedClauses()
+    isSatisfiable = plResolution.plResolution(clauses)
+
+    if not isSatisfiable:
+        print "no"
+        sys.exit()
+    # the sentence is satisfiable
+    print "yes"
+    p = 0.5
+    walkSAT = WalkSAT()
+
+    while True:
+        model = walkSAT.walkSAT(clauses,p)
+        if model is not None:
+            break
+        # else, redo it until the satisfiable model is found by trying another p value
+        p = random.random()
+
+    # print table assignment
+    for person_index in range(1,num_person + 1):
+        for table_index in range(1,num_table + 1):
+            assign_value = model.assignments[propositionSymbolFactory.getPropositionSymbol("X[{},{}]".format(person_index,table_index))]
+            if assign_value:
+                print "{} {}".format(person_index,table_index)
+                break
