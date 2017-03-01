@@ -489,6 +489,7 @@ if __name__ == "__main__":
     num_table = -1
     friend_pairs = [] # type:list[tuple[int,int]]
     enemy_pairs = [] # type:list[tuple[int,int]]
+    output_content = ""
 
     # parse all arguments from a file
     f = open("input.txt", 'r')
@@ -516,10 +517,12 @@ if __name__ == "__main__":
     isSatisfiable = plResolution.plResolution(clauses)
 
     if not isSatisfiable:
-        print "no"
+        output_content = "no" + "\n"
+        output_file = open("output.txt", 'w')
+        output_file.write(output_content)
         sys.exit()
     # the sentence is satisfiable
-    print "yes"
+    output_content = "yes" + "\n"
     p = 0.5
     walkSAT = WalkSAT()
 
@@ -535,5 +538,8 @@ if __name__ == "__main__":
         for table_index in range(1,num_table + 1):
             assign_value = model.assignments[propositionSymbolFactory.getPropositionSymbol("X[{},{}]".format(person_index,table_index))]
             if assign_value:
-                print "{} {}".format(person_index,table_index)
+                output_content += "{} {}".format(person_index,table_index) + "\n"
                 break
+
+    output_file = open("output.txt", 'w')
+    output_file.write(output_content)
