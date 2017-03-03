@@ -49,6 +49,15 @@ class Clause(object):
         self._isTautology = None
         self._representation = None
 
+    def getLiterals(self):
+        """
+        :rtype: set[Literal]
+        """
+        return self.literals
+
+    def isUnitClause(self):
+        return self.getNumberLiterals() == 1
+
     def getNumberLiterals(self):
         return len(self.literals)
 
@@ -167,6 +176,120 @@ class ClauseHelper(object):
             literals.append(self.getLiteral(token))
 
         return Clause(literals)
+
+class DPLL(object):
+    """
+    Check satisfiability with DPLL algorithm
+    """
+    def dpllSatisfiable(self,clause_set):
+        symbols = list() #type: list[PropositionSymbol]
+        for c in clause_set: #type: Clause
+            for symbol in c.getSymbols():
+                if symbol not in symbols:
+                    symbols.append(symbol)
+        return self.dpll(clause_set,symbols,Model())
+
+    def dpll(self,clause_set,symbols,model):
+
+        if self.everyClauseTrue(clause_set,model):
+            return True
+
+        if self.someClauseFalse(clause_set,model):
+            return False
+
+        pAndValue = self.findPureSymbol(symbols,clause_set,model)
+        if pAndValue is not None:
+            copy_symbols = copy.copy(symbols)
+            copy_symbols.remove(pAndValue[0])
+            return self.dpll(clause_set,copy_symbols,
+                             model.union(pAndValue[0],pAndValue[1]))
+
+        pAndValue = self.findUnitClause(clause_set,model)
+        if pAndValue is not None:
+            copy_symbols = copy.copy(symbols)
+            copy_symbols.remove(pAndValue[0])
+            return self.dpll(clause_set, copy_symbols,
+                             model.union(pAndValue[0], pAndValue[1]))
+
+        p = symbols[0] #type: PropositionSymbol
+        rest = symbols[1:] #type: list[PropositionSymbol]
+
+        return self.dpll(clause_set,rest,model.union(p,True)) or self.dpll(clause_set,rest,model.union(p,False))
+
+    def everyClauseTrue(self,clauses,model):
+        return model.satisfies(clauses)
+
+    def someClauseFalse(self,clauses,model):
+        for c in clauses:
+            v = model.determineValue(c)
+            if v is not None and v is False:
+                return True
+        return False
+
+    def findPureSymbol(self,symbols,clauses,model):
+        """
+        :type symbols: list[PropositionSymbol]
+        :type clauses: set[Clause]
+        :type model: Model
+
+        :rtype: (PropositionSymbol,bool)
+        """
+        result = None
+        candidatePurePositiveSymbols = set()
+        candidatePureNegativeSymbols = set()
+        for c in clauses: #type: Clause
+            if model.determineValue(c):
+                continue
+
+            for p in c.getPositiveSymbols():
+                if p in symbols:
+                    candidatePurePositiveSymbols.add(p)
+
+            for p in c.getNegativeSymbols():
+                if p in symbols:
+                    candidatePureNegativeSymbols.add(p)
+
+        for p in symbols:
+            if p in candidatePurePositiveSymbols and p in candidatePureNegativeSymbols:
+                candidatePurePositiveSymbols.remove(p)
+                candidatePureNegativeSymbols.remove(p)
+
+        if len(candidatePurePositiveSymbols) > 0:
+            result = (list(candidatePurePositiveSymbols)[0],True)
+        elif len(candidatePureNegativeSymbols) > 0:
+            result = (list(candidatePureNegativeSymbols)[0],False)
+
+        return result
+
+    def findUnitClause(self,clauses,model):
+        """
+        :type clauses: set[Clause]
+        :type model: Model
+
+        :rtype: (PropositionSymbol,bool)
+        """
+        result = None
+
+        for c in clauses: #type: Clause
+            if model.determineValue(c) is None:
+                unassigned = None #type: Literal
+                if c.isUnitClause():
+                    unassigned = list(c.getLiterals())[0]
+                else:
+                    for l in list(c.getLiterals()):
+                        value = model.assignments.get(l.propositionSymbol)
+                        if value is None:
+                            if unassigned is None:
+                                unassigned = l
+                            else:
+                                unassigned = None
+                                break
+
+                if unassigned is not None:
+                    result = (unassigned.propositionSymbol,unassigned.isPositiveLiteral())
+                    break
+
+        return result
 
 class PLResolution(object):
     """
@@ -328,7 +451,8 @@ class KnowledgeOperator(object):
         return result
 
 class Model(object):
-    def __init__(self,d):
+
+    def __init__(self,d={}):
         self.assignments = copy.copy(d) # type:{PropositionSymbol:bool}
 
     def determineValue(self,c):
@@ -346,16 +470,32 @@ class Model(object):
         if c.isTautology():
             return True
 
+        result = None
+        unassignedSymbols = False
+        value = None
         for p in c.getPositiveSymbols():
-            value = self.assignments[p]
-            if value:
-                return True
-        for p in c.getNegativeSymbols():
-            value = self.assignments[p]
-            if not value:
-                return True
+            value = self.assignments.get(p)
+            if value is not None:
+                if value:
+                    result = True
+                    break
+            else:
+                unassignedSymbols = True
+        if result is None:
+            for p in c.getNegativeSymbols():
+                value = self.assignments.get(p)
+                if value is not None:
+                    if not value:
+                        result = True
+                        break
+                else:
+                    unassignedSymbols = True
 
-        return False
+            if result is None:
+                if not unassignedSymbols:
+                    result = False
+
+        return result
 
     def satisfies(self,clauses):
         """
@@ -374,7 +514,12 @@ class Model(object):
     def flip(self,p):
         """
         :type p: PropositionSymbol
+
+        :rtype: Model
         """
+        if p not in self.assignments:
+            return self
+
         if self.assignments[p]:
             return self.union(p,False)
         return self.union(p,True)
@@ -490,6 +635,7 @@ if __name__ == "__main__":
     friend_pairs = [] # type:list[tuple[int,int]]
     enemy_pairs = [] # type:list[tuple[int,int]]
     output_content = ""
+    isUseDPLL = True
 
     # parse all arguments from a file
     f = open("input.txt", 'r')
@@ -508,13 +654,18 @@ if __name__ == "__main__":
             else:
                 enemy_pairs.append((person_i,person_j))
 
-    # start PLResolution
+    # start PLResolution/ DPLL
     propositionSymbolFactory = PropositionSymbolFactory()
     clauseHelper = ClauseHelper(propositionSymbolFactory)
     knowledgeOperator = KnowledgeOperator(num_person,num_table,friend_pairs,enemy_pairs,clauseHelper)
-    plResolution = PLResolution()
     clauses = knowledgeOperator.getAssociatedClauses()
-    isSatisfiable = plResolution.plResolution(clauses)
+
+    if isUseDPLL:
+        dpll = DPLL()
+        isSatisfiable = dpll.dpllSatisfiable(clauses)
+    else:
+        plResolution = PLResolution()
+        isSatisfiable = plResolution.plResolution(clauses)
 
     if not isSatisfiable:
         output_content = "no" + "\n"

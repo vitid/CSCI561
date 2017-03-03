@@ -6,6 +6,7 @@ class TestKnowledgeRepresentation(unittest.TestCase):
         self.propositionSymbolFactory = PropositionSymbolFactory()
         self.clauseHelper = ClauseHelper(self.propositionSymbolFactory)
         self.plResolution = PLResolution()
+        self.dpll = DPLL()
 
         # initialize A,B,C,D,E symbols
         self.propositionSymbolFactory.getPropositionSymbol("A")
@@ -244,6 +245,7 @@ class TestKnowledgeRepresentation(unittest.TestCase):
         """
         ko = KnowledgeOperator(4, 1, [(1,2),(2,3),(3,4)], [], self.clauseHelper)
         self.assertTrue(self.plResolution.plResolution(ko.getAssociatedClauses()))
+        self.assertTrue(self.dpll.dpllSatisfiable(ko.getAssociatedClauses()))
 
     def test_TATestCase2(self):
         """
@@ -258,8 +260,9 @@ class TestKnowledgeRepresentation(unittest.TestCase):
         """
         ko = KnowledgeOperator(5, 1, [(1,2),(4,5)], [(1,3)], self.clauseHelper)
         self.assertFalse(self.plResolution.plResolution(ko.getAssociatedClauses()))
+        self.assertFalse(self.dpll.dpllSatisfiable(ko.getAssociatedClauses()))
 
-    def _test_TATestCase3(self):
+    def test_TATestCase3(self):
         """
         Input:
         8 10
@@ -272,7 +275,9 @@ class TestKnowledgeRepresentation(unittest.TestCase):
         :return:
         """
         ko = KnowledgeOperator(8, 10, [], [(1,2),(2,5),(6,7),(7,8)], self.clauseHelper)
-        self.assertTrue(self.plResolution.plResolution(ko.getAssociatedClauses()))
+        # PL Resolution is exploded
+        #self.assertTrue(self.plResolution.plResolution(ko.getAssociatedClauses()))
+        self.assertTrue(self.dpll.dpllSatisfiable(ko.getAssociatedClauses()))
 
     def test_TATestCase4(self):
         """
@@ -288,8 +293,9 @@ class TestKnowledgeRepresentation(unittest.TestCase):
         """
         ko = KnowledgeOperator(6, 2, [(1,2),(2,4),(4,6)], [(1,6)], self.clauseHelper)
         self.assertFalse(self.plResolution.plResolution(ko.getAssociatedClauses()))
+        self.assertFalse(self.dpll.dpllSatisfiable(ko.getAssociatedClauses()))
 
-    def _test_TATestCase5(self):
+    def test_TATestCase5(self):
         """
         Input:
         9 3
@@ -306,7 +312,24 @@ class TestKnowledgeRepresentation(unittest.TestCase):
         :return:
         """
         ko = KnowledgeOperator(9, 3, [(1,3),(1,8),(2,4),(5,6),(6,9)], [(1,2),(3,7),(8,9)], self.clauseHelper)
-        self.assertTrue(self.plResolution.plResolution(ko.getAssociatedClauses()))
+        # PL Resolution is exploded
+        #self.assertTrue(self.plResolution.plResolution(ko.getAssociatedClauses()))
+        self.assertTrue(self.dpll.dpllSatisfiable(ko.getAssociatedClauses()))
+
+    def test_CustomTestCase0(self):
+        """
+        Input:
+        13 14
+        5 1 E
+        2 3 F
+
+        Output: yes
+        :return:
+        """
+        ko = KnowledgeOperator(13, 14, [(2,3)], [(5,1)], self.clauseHelper)
+        # PL Resolution is exploded
+        #self.assertTrue(self.plResolution.plResolution(ko.getAssociatedClauses()))
+        self.assertTrue(self.dpll.dpllSatisfiable(ko.getAssociatedClauses()))
 
     def test_determineValue0(self):
         model = Model({PropositionSymbol("A"):True})
@@ -473,6 +496,21 @@ class TestKnowledgeRepresentation(unittest.TestCase):
         :return:
         """
         ko = KnowledgeOperator(9, 3, [(1, 3), (1, 8), (2, 4), (5, 6), (6, 9)], [(1, 2), (3, 7), (8, 9)],self.clauseHelper)
+        walkSAT = WalkSAT(100)
+        model = walkSAT.walkSAT(ko.getAssociatedClauses(), 0.5, 100)
+        self.assertTrue(model.satisfies(ko.getAssociatedClauses()))
+
+    def test_CustomTestCase0_walkSAT(self):
+        """
+        Input:
+        13 14
+        5 1 E
+        2 3 F
+
+        Output: yes
+        :return:
+        """
+        ko = KnowledgeOperator(13, 14, [(2,3)], [(5,1)], self.clauseHelper)
         walkSAT = WalkSAT(100)
         model = walkSAT.walkSAT(ko.getAssociatedClauses(), 0.5, 100)
         self.assertTrue(model.satisfies(ko.getAssociatedClauses()))
