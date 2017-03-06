@@ -327,9 +327,56 @@ class TestKnowledgeRepresentation(unittest.TestCase):
         :return:
         """
         ko = KnowledgeOperator(13, 14, [(2,3)], [(5,1)], self.clauseHelper)
-        # PL Resolution is exploded
-        #self.assertTrue(self.plResolution.plResolution(ko.getAssociatedClauses()))
         self.assertTrue(self.dpll.dpllSatisfiable(ko.getAssociatedClauses()))
+
+    def test_CustomTestCase1(self):
+        """
+        Input:
+        2 1
+        1 2 E
+
+        Output: no
+        :return:
+        """
+        ko = KnowledgeOperator(2, 1, [], [(1,2)], self.clauseHelper)
+        self.assertFalse(self.dpll.dpllSatisfiable(ko.getAssociatedClauses()))
+
+    def test_CustomTestCase2(self):
+        """
+        Input:
+        15 3
+        1 2 E
+        3 4 E
+        5 6 E
+        7 8 E
+        9 10 E
+        11 12 E
+        7 9 E
+
+        Output: yes
+        :return:
+        """
+        ko = KnowledgeOperator(15, 3, [], [(1,2),(3,4),(5,6),(7,8),(9,10),(11,12),(7,9)], self.clauseHelper)
+        self.assertTrue(self.dpll.dpllSatisfiable(ko.getAssociatedClauses()))
+
+    def test_CustomTestCase3(self):
+        """
+        Input:
+        15 3
+        1 2 E
+        3 4 E
+        5 6 E
+        7 8 E
+        9 10 E
+        11 12 E
+        7 9 E
+        4 3 F
+
+        Output: no
+        :return:
+        """
+        ko = KnowledgeOperator(15, 3, [(4,3)], [(1,2),(3,4),(5,6),(7,8),(9,10),(11,12),(7,9)], self.clauseHelper)
+        self.assertFalse(self.dpll.dpllSatisfiable(ko.getAssociatedClauses()))
 
     def test_determineValue0(self):
         model = Model({PropositionSymbol("A"):True})
@@ -511,6 +558,26 @@ class TestKnowledgeRepresentation(unittest.TestCase):
         :return:
         """
         ko = KnowledgeOperator(13, 14, [(2,3)], [(5,1)], self.clauseHelper)
+        walkSAT = WalkSAT(100)
+        model = walkSAT.walkSAT(ko.getAssociatedClauses(), 0.5, 100)
+        self.assertTrue(model.satisfies(ko.getAssociatedClauses()))
+
+    def test_CustomTestCase3_walkSAT(self):
+        """
+        Input:
+        15 3
+        1 2 E
+        3 4 E
+        5 6 E
+        7 8 E
+        9 10 E
+        11 12 E
+        7 9 E
+
+        Output: yes
+        :return:
+        """
+        ko = KnowledgeOperator(15, 3, [], [(1,2),(3,4),(5,6),(7,8),(9,10),(11,12),(7,9)], self.clauseHelper)
         walkSAT = WalkSAT(100)
         model = walkSAT.walkSAT(ko.getAssociatedClauses(), 0.5, 100)
         self.assertTrue(model.satisfies(ko.getAssociatedClauses()))
