@@ -378,6 +378,48 @@ class TestKnowledgeRepresentation(unittest.TestCase):
         ko = KnowledgeOperator(15, 3, [(4,3)], [(1,2),(3,4),(5,6),(7,8),(9,10),(11,12),(7,9)], self.clauseHelper)
         self.assertFalse(self.dpll.dpllSatisfiable(ko.getAssociatedClauses()))
 
+    def test_CustomTestCase4(self):
+        """
+        Input:
+        30 3
+        1 2 E
+        3 4 E
+        5 6 E
+        7 8 E
+        9 10 E
+        11 12 E
+        12 13 E
+        13 14 E
+        14 15 E
+        15 16 E
+        17 16 E
+        17 18 E
+        19 18 E
+        19 20 E
+        21 20 E
+        21 22 E
+        23 22 E
+        23 24 E
+        25 24 E
+        25 26 E
+        27 26 E
+        27 28 E
+        29 28 E
+        29 30 E
+        30 1 F
+        1 5 F
+        5 9 F
+        9 13 F
+        13 17 F
+        17 21 F
+        21 25 F
+
+        Output: yes
+        :return:
+        """
+        ko = KnowledgeOperator(30, 3, [(1,30),(1,5),(5,9),(9,13),(13,17),(17,21),(21,25)], [(1,2),(3,4),(5,6),(7,8),(9,10),(11,12),(12,13),(13,14),(14,15),(15,16),(16,17),(17,18),(18,19),(19,20),(20,21),(21,22),(22,23),(23,24),(24,25),(25,26),(26,27),(27,28),(28,29),(29,30)], self.clauseHelper)
+        self.assertTrue(self.dpll.dpllSatisfiable(ko.getAssociatedClauses()))
+
     def test_determineValue0(self):
         model = Model({PropositionSymbol("A"):True})
         self.assertTrue(model.determineValue(self.clauseHelper.generateClause(["A"])))
@@ -580,6 +622,50 @@ class TestKnowledgeRepresentation(unittest.TestCase):
         ko = KnowledgeOperator(15, 3, [], [(1,2),(3,4),(5,6),(7,8),(9,10),(11,12),(7,9)], self.clauseHelper)
         walkSAT = WalkSAT(100)
         model = walkSAT.walkSAT(ko.getAssociatedClauses(), 0.5, 100)
+        self.assertTrue(model.satisfies(ko.getAssociatedClauses()))
+
+    def test_CustomTestCase4_walkSAT(self):
+        """
+        Input:
+        30 3
+        1 2 E
+        3 4 E
+        5 6 E
+        7 8 E
+        9 10 E
+        11 12 E
+        12 13 E
+        13 14 E
+        14 15 E
+        15 16 E
+        17 16 E
+        17 18 E
+        19 18 E
+        19 20 E
+        21 20 E
+        21 22 E
+        23 22 E
+        23 24 E
+        25 24 E
+        25 26 E
+        27 26 E
+        27 28 E
+        29 28 E
+        29 30 E
+        30 1 F
+        1 5 F
+        5 9 F
+        9 13 F
+        13 17 F
+        17 21 F
+        21 25 F
+
+        Output: yes
+        :return:
+        """
+        ko = KnowledgeOperator(30, 3, [(1,30),(1,5),(5,9),(9,13),(13,17),(17,21),(21,25)], [(1,2),(3,4),(5,6),(7,8),(9,10),(11,12),(12,13),(13,14),(14,15),(15,16),(16,17),(17,18),(18,19),(19,20),(20,21),(21,22),(22,23),(23,24),(24,25),(25,26),(26,27),(27,28),(28,29),(29,30)], self.clauseHelper)
+        walkSAT = WalkSAT(100)
+        model = walkSAT.walkSAT(ko.getAssociatedClauses(), 0.5, 1000)
         self.assertTrue(model.satisfies(ko.getAssociatedClauses()))
 
 if __name__ == '__main__':
