@@ -142,6 +142,10 @@ class BayesNet:
         """
         :type evidents: dict[str,bool]
         """
+        for node in self.nodes.values():
+            if node.isDecisionNode():
+                node.prob = 0.5
+
         for node_name in evidents:
             decision = evidents[node_name]
             if self.nodes[node_name].isDecisionNode():
@@ -324,15 +328,15 @@ if __name__ == '__main__':
     for q in querys:
         if q.isPQuery():
             r = bayes_net.queryProb(q.ask_variables,q.evidents)
-            outputs.append(round(r,2))
+            outputs.append("{0:.2f}".format(round(r,2)))
         elif q.isEUQuery():
             r = bayes_net.getExpectedUtility(q.evidents)
-            outputs.append(int(round(r)))
+            outputs.append(str(int(round(r))))
         else:
             result = bayes_net.getMaximumExpectedUtility(q.decision_nodes,q.evidents)
             decision = " ".join([Utility.convertToSymbol(t) for t in result[0]])
             r = int(round(result[1]))
             outputs.append(decision + " " + str(r))
 
-    for output in outputs:
-        print output
+    output_file = open("output.txt", 'w')
+    output_file.write("\n".join(outputs))
