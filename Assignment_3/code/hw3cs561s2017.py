@@ -61,6 +61,7 @@ class BayesNet:
             self.nodes[n.node_name] = n
 
         self.utility_node = utility_node
+        self.marginalize_cache = {}
 
     def queryGiven(self,rv_name,evidents):
         """
@@ -101,14 +102,34 @@ class BayesNet:
         if v in evidents:
             result = self.queryGiven(v,evidents) * self.enumerateAllVariables(variables[1:],evidents)
         else:
-            probs = []
-            evidents_copy = copy.deepcopy(evidents)
-            for outcome in [True,False]:
-                evidents_copy[v] = outcome
-                probs.append(self.queryGiven(v,evidents_copy)*self.enumerateAllVariables(variables[1:],evidents_copy))
-            result = sum(probs)
+            immediate_and_all_lower_parents = self.getAllParents(variables)
+            depended_upper_parents = immediate_and_all_lower_parents.intersection(set([e for e in evidents.keys()]))
+            depended_upper_parents = sorted(list(depended_upper_parents))
+
+            key = v + "|" + ",".join([e + ":" + str(evidents[e]) for e in depended_upper_parents])
+            if key in self.marginalize_cache:
+                result = self.marginalize_cache[key]
+            else:
+                probs = []
+                evidents_copy = copy.deepcopy(evidents)
+                for outcome in [True, False]:
+                    evidents_copy[v] = outcome
+                    probs.append(
+                        self.queryGiven(v, evidents_copy) * self.enumerateAllVariables(variables[1:], evidents_copy))
+                result = sum(probs)
+                self.marginalize_cache[key] = result
 
         return result
+
+    def getImmediateParents(self,variable):
+        return [p.node_name for p in self.nodes[variable].parents]
+
+    def getAllParents(self,variables):
+        s = set()
+        for v in variables:
+            for p in self.nodes[v].parents:
+                s.add(p.node_name)
+        return s
 
     def normalize(self,probs):
         sum_prob_rec = 1.0/sum(probs)
@@ -127,6 +148,7 @@ class BayesNet:
 
     def _enumerateProbs(self, variables, evidents,node_names_sorted):
         if len(variables) == 0:
+            self.marginalize_cache = {}
             return [(evidents,self.enumerateAllVariables(node_names_sorted,evidents))]
 
         v = variables[0]
@@ -160,7 +182,7 @@ class BayesNet:
         :type evidents: dict[str,bool]
         """
         self.adjustDecisionNodes(evidents)
-        variables = [v[0] for v in ask_variables]
+        variables = ask_variables.keys()
         result = self.enumerateProbs(variables,evidents)
         for r in result:
             is_violate = False
